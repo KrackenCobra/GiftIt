@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "GiftIt",
+    "slug": "giftit",
+    "scheme": "giftit",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "bundleIdentifier": "com.example.giftit",
+      "supportsTablet": false,
+      "associatedDomains": ["webcredentials:giftit.example.com"],
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "GiftIt uses Face ID to unlock your encrypted favorites."
+      }
+    },
+    "android": {
+      "package": "com.example.giftit",
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.READ_CONTACTS",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "plugins": [
+      "expo-secure-store",
+      ["expo-local-authentication", { "faceIDPermission": "GiftIt uses Face ID to unlock your encrypted favorites." }]
+    ],
+    "extra": {
+      "passkeyRpId": "giftit.example.com"
+    }
+  }
+}
