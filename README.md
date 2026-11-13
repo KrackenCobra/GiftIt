@@ -36,6 +36,20 @@ Share your favorite colors, flowers, foods and wishlist links with family and cl
 4. **Env:** copy `.env.example` to `.env` with your project URL and anon key. Never ship the service-role key.
 5. **Run:** `npx expo run:ios` / `npx expo run:android` (a dev build is required; libsodium and passkeys are native modules, so Expo Go won't work).
 
+### iPhone without a Mac (EAS cloud builds)
+
+```bash
+npm i -g eas-cli
+eas login
+eas init                                   # links the project to your Expo account
+eas env:create --environment development --name EXPO_PUBLIC_SUPABASE_URL --value https://YOUR-PROJECT.supabase.co --visibility plaintext
+eas env:create --environment development --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value YOUR-ANON-KEY --visibility plaintext
+eas device:create                          # open the link on your iPhone to register it
+eas build --profile development --platform ios
+```
+
+Needs a paid Apple Developer account to install on a real iPhone. Install the build from the link EAS gives you, then run `npx expo start --dev-client` on any computer (Windows is fine) and open the project from the app.
+
 ## Tests
 
 ```bash
