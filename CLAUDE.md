@@ -5,6 +5,7 @@ Security is the product: favorites are credential-grade data (security-question 
 
 ## Non-negotiables
 - Plaintext user content never leaves the phone. Encrypt with `src/crypto/core.ts` before any write; the server stores ciphertext only.
+- Every item envelope is signed with the owner's identity key (`signEnvelope`) and verified on read (`verifyEnvelope`) against your own or a pinned identity. Drop anything that fails.
 - Every new table: RLS enabled + policies + tests in `supabase/tests/rls_test.sql`. Cross-row or privileged writes go through `SECURITY DEFINER` functions with `set search_path = ''`, granted to `authenticated` only.
 - Only seal keys to devices whose cert verifies against a trusted identity key (`trustedDevicesOf` in `src/services/circles.ts`). Never trust the server's device list alone.
 - Gift-suggestion requests carry only allow-listed tags (`src/crypto/tags.ts`), budget and occasion. No IDs, names or free text.
@@ -22,4 +23,4 @@ Security is the product: favorites are credential-grade data (security-question 
 - `src/crypto/` pure crypto + key storage · `src/services/` Supabase calls · `src/screens/` UI · `supabase/` schema, edge function, DB tests.
 
 ## Known gaps (see README "Known limits")
-Passkey API is Supabase beta; items aren't author-signed yet; device revoke should trigger rotation of owned circles.
+Passkey API is Supabase beta; device revoke should trigger rotation of owned circles; server can still delete items or replay an older signed version.

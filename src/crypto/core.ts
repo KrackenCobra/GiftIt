@@ -70,6 +70,7 @@ export interface Envelope {
   v: typeof ENVELOPE_VERSION;
   n: string; // nonce, base64url
   c: string; // ciphertext + Poly1305 tag, base64url
+  s?: string; // author signature (Ed25519, identity key) over context + nonce + ciphertext
 }
 
 /** Bound into every item's AEAD tag. All fields must match on decrypt. */
@@ -191,6 +192,30 @@ export function createCrypto(sodium: SodiumLike) {
     return { publicKey: kp.publicKey, privateKey: kp.privateKey };
   }
 
+  function sigMessage(env: Envelope, ctx: ItemContext): Uint8Array {
+    const ad = sodium.to_string(contextBytes(ctx));
+    return sodium.from_string(`giftit/item-sig/v1|${ad}|${env.n}|${env.c}`);
+  }
+
+  /**
+   * Author signature. Anyone holding a circle key can encrypt, so the AEAD tag alone doesn't
+   * prove who wrote an item. The owner's identity signature does: a circle member, or a
+   * server colluding with one, can't forge or alter items in someone else's name.
+   */
+  function signEnvelope(env: Envelope, ctx: ItemContext, identityPrivateKey: Uint8Array): Envelope {
+    const { s: _drop, ...unsigned } = env;
+    return { ...unsigned, s: b64(sodium.crypto_sign_detached(sigMessage(unsigned, ctx), identityPrivateKey)) };
+  }
+
+  function verifyEnvelope(env: Envelope, ctx: ItemContext, identityPublicKey: Uint8Array): boolean {
+    if (!env?.s) return false;
+    try {
+      return sodium.crypto_sign_verify_detached(unb64(env.s), sigMessage(env, ctx), identityPublicKey);
+    } catch {
+      return false;
+    }
+  }
+
   /** Rebuild the identity key from its 32-byte seed (how it is shared between your own phones). */
   function identityFromSeed(seed: Uint8Array) {
     const kp = sodium.crypto_sign_seed_keypair(seed);
@@ -256,6 +281,8 @@ export function createCrypto(sodium: SodiumLike) {
     identityFromSeed,
     certifyDevice,
     verifyDeviceCert,
+    signEnvelope,
+    verifyEnvelope,
     safetyNumber,
     toB64: b64,
     fromB64: unb64,

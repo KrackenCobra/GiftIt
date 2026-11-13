@@ -119,6 +119,27 @@ describe('recovery and identity', () => {
     expect(c.identityFromSeed(seed).publicKey).toEqual(id.publicKey);
   });
 
+  test('author signatures: owner-signed items verify; forged, altered or moved ones do not', () => {
+    const owner = c.identityFromSeed(c.newSymmetricKey());
+    const member = c.identityFromSeed(c.newSymmetricKey());
+    const circleKey = c.newSymmetricKey();
+    const signed = c.signEnvelope(c.encryptJson({ value: 'Teal' }, circleKey, ctx), ctx, owner.privateKey);
+    expect(c.verifyEnvelope(signed, ctx, owner.publicKey)).toBe(true);
+    expect(c.decryptJson(signed, circleKey, ctx)).toEqual({ value: 'Teal' }); // signature doesn't break decryption
+
+    // A member holds the circle key and can encrypt, but can't sign as the owner.
+    const forged = c.signEnvelope(c.encryptJson({ value: 'Send me gift cards' }, circleKey, ctx), ctx, member.privateKey);
+    expect(c.verifyEnvelope(forged, ctx, owner.publicKey)).toBe(false);
+
+    const unsigned = c.encryptJson({ value: 'x' }, circleKey, ctx);
+    expect(c.verifyEnvelope(unsigned, ctx, owner.publicKey)).toBe(false);
+
+    const altered = { ...signed, c: c.toB64(c.fromB64(signed.c).map((b, i) => (i === 0 ? b ^ 1 : b))) };
+    expect(c.verifyEnvelope(altered, ctx, owner.publicKey)).toBe(false);
+    expect(c.verifyEnvelope(signed, { ...ctx, itemId: 'item-9' }, owner.publicKey)).toBe(false);
+    expect(c.verifyEnvelope(signed, { ...ctx, keyVersion: 2 }, owner.publicKey)).toBe(false);
+  });
+
   test('safety number is symmetric and changes when a key changes', () => {
     const a = c.identityFromSeed(c.newSymmetricKey()).publicKey;
     const b = c.identityFromSeed(c.newSymmetricKey()).publicKey;

@@ -8,11 +8,21 @@
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
-      "ios": { "resourceClass": "m-medium" }
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://rydhikopilbwntkjbyhi.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_FUKr6bqm8d-ExVVGLWZMDg_fn7JsAfF"
+      }
     },
     "preview": {
       "distribution": "internal",
-      "environment": "preview"
+      "environment": "preview",
+      "env": {
+        "EXPO_PUBLIC_SUPABASE_URL": "https://rydhikopilbwntkjbyhi.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "sb_publishable_FUKr6bqm8d-ExVVGLWZMDg_fn7JsAfF"
+      }
     },
     "production": {
       "autoIncrement": true,

@@ -1,7 +1,7 @@
 import { CryptoDigestAlgorithm, digestStringAsync, getRandomBytes } from 'expo-crypto';
 import { supabase } from '../lib/supabase';
 import { crypto, type Envelope } from '../crypto';
-import { cacheKey, forgetCircleKey, getPinnedIdentity, loadIdentityPublicKey, pinIdentity } from '../crypto/keystore';
+import { cacheKey, forgetCircleKey, getPinnedIdentity, loadIdentityPrivateKey, loadIdentityPublicKey, pinIdentity } from '../crypto/keystore';
 import { getCircleKey } from './keys';
 
 async function myId() {
@@ -186,11 +186,25 @@ export async function removeMemberAndRotate(circleId: string, memberId: string) 
   await sealToUsers(circleId, newV, newKey, [uid, ...(members ?? []).map((m) => m.user_id as string)]);
 
   const { data: items } = await supabase.from('items').select('id, ciphertext').eq('circle_id', circleId);
-  for (const it of items ?? []) {
-    const plain = c.decryptJson(it.ciphertext as Envelope, oldKey, { kind: 'item', itemId: it.id, ownerId: uid, keyVersion: oldV });
-    const ct = c.encryptJson(plain, newKey, { kind: 'item', itemId: it.id, ownerId: uid, keyVersion: newV });
-    const up = await supabase.from('items').update({ ciphertext: ct, key_version: newV }).eq('id', it.id);
-    if (up.error) throw up.error;
+  const myIdentity = await loadIdentityPublicKey();
+  if (!myIdentity) throw new Error('This phone is not set up yet');
+  const idSk = await loadIdentityPrivateKey(); // one biometric prompt for the whole rotation
+  try {
+    for (const it of items ?? []) {
+      const oldCtx = { kind: 'item' as const, itemId: it.id, ownerId: uid, keyVersion: oldV };
+      const newCtx = { ...oldCtx, keyVersion: newV };
+      // Never re-sign something we didn't write: skip rows whose signature doesn't verify.
+      if (!c.verifyEnvelope(it.ciphertext as Envelope, oldCtx, myIdentity)) {
+        await supabase.from('items').delete().eq('id', it.id);
+        continue;
+      }
+      const plain = c.decryptJson(it.ciphertext as Envelope, oldKey, oldCtx);
+      const ct = c.signEnvelope(c.encryptJson(plain, newKey, newCtx), newCtx, idSk);
+      const up = await supabase.from('items').update({ ciphertext: ct, key_version: newV }).eq('id', it.id);
+      if (up.error) throw up.error;
+    }
+  } finally {
+    c.wipe(idSk);
   }
   const name = c.decryptJson(circle.name_ciphertext as Envelope, oldKey, { kind: 'circle_name', itemId: circleId, ownerId: uid, keyVersion: oldV });
   const nameCt = c.encryptJson(name, newKey, { kind: 'circle_name', itemId: circleId, ownerId: uid, keyVersion: newV });

@@ -42,8 +42,7 @@ Share your favorite colors, flowers, foods and wishlist links with family and cl
 npm i -g eas-cli
 eas login
 eas init                                   # links the project to your Expo account
-eas env:create --environment development --name EXPO_PUBLIC_SUPABASE_URL --value https://YOUR-PROJECT.supabase.co --visibility plaintext
-eas env:create --environment development --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value YOUR-ANON-KEY --visibility plaintext
+# The dev Supabase URL + publishable key are already in eas.json (public values; RLS protects data).
 eas device:create                          # open the link on your iPhone to register it
 eas build --profile development --platform ios
 ```
@@ -53,7 +52,7 @@ Needs a paid Apple Developer account to install on a real iPhone. Install the bu
 ## Tests
 
 ```bash
-npm test               # 28 tests: encryption, tampering, key sealing, rotation, recovery, device certs, tags, links
+npm test               # 29 tests: encryption, tampering, key sealing, rotation, recovery, device certs, tags, links
 npm run typecheck
 PGURL=postgres://postgres@localhost:5432/postgres supabase/tests/run.sh   # 26 RLS tests
 ```
@@ -73,7 +72,7 @@ PGURL=postgres://postgres@localhost:5432/postgres supabase/tests/run.sh   # 26 R
 
 - Supabase passkeys are **beta**. Re-check method names in `src/services/auth.ts` against the current docs before release.
 - The server knows the social graph (who is in whose circle) and *that* a wishlist item was claimed. It never learns what anything says.
-- Items aren't signed by their author yet, so a compromised server could delete or replay old ciphertext (it still can't read or forge content without a circle key). Planned: per-item Ed25519 signatures with the identity key.
+- Items are signed by their author's identity key, so nobody (a circle member, or the server) can forge or alter them. A compromised server could still delete items or serve an older signed version of one.
 - Revoking a device should be followed by rotating every circle you own; wire `revokeDevice` to `removeMemberAndRotate`-style rotation for each circle.
 - The suggestion proxy ships with a search-link adapter that works today. Add affiliate partner APIs once your accounts are approved, and keep the same output shape.
 - Before launch: external pen test against OWASP MASVS L2, privacy policy, App Store / Play data-safety forms, in-app data export and delete.

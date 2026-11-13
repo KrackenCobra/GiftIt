@@ -6,7 +6,9 @@ import { Chip, Notice, s } from '../components/ui';
 import { colors } from '../theme';
 import { displayDomain } from '../crypto/links';
 import type { Budget } from '../crypto/tags';
-import { listSharedBy, type Favorite } from '../services/items';
+import { listSharedBy, NotVerifiedError, type Favorite } from '../services/items';
+import { confirmSafetyNumber, safetyNumberWith } from '../services/circles';
+import { Button } from '../components/ui';
 import { getGiftIdeas, type Product } from '../services/suggestions';
 import { claimItem, friendWishlist, openProductLink, unclaimItem, type FriendWishlistItem } from '../services/wishlist';
 
@@ -22,9 +24,18 @@ export function FriendScreen() {
   const [wish, setWish] = useState<FriendWishlistItem[]>([]);
   const [budget, setBudget] = useState<Budget>('25-75');
   const [ideas, setIdeas] = useState<Product[]>([]);
+  const [needsVerify, setNeedsVerify] = useState(false);
 
   const load = useCallback(async () => {
-    const [f, w] = await Promise.all([listSharedBy(userId), friendWishlist(userId)]);
+    let f: Favorite[];
+    let w: FriendWishlistItem[];
+    try {
+      [f, w] = await Promise.all([listSharedBy(userId), friendWishlist(userId)]);
+    } catch (e) {
+      if (e instanceof NotVerifiedError) return setNeedsVerify(true);
+      throw e;
+    }
+    setNeedsVerify(false);
     const nonWish = f.filter((x) => x.category !== 'wishlist');
     setFavs(nonWish);
     setWish(w);
@@ -41,6 +52,33 @@ export function FriendScreen() {
       Alert.alert('Could not update', e instanceof Error ? e.message : 'Please try again');
     }
   };
+
+  async function verify() {
+    try {
+      const { number, theirIdentity } = await safetyNumberWith(userId);
+      const ok = await new Promise<boolean>((resolve) =>
+        Alert.alert(`Verify ${name}`, `Compare this with the number on ${name}'s phone, in person or on a call you started:\n\n${number}`, [
+          { text: "Doesn't match", style: 'destructive', onPress: () => resolve(false) },
+          { text: 'Matches', onPress: () => resolve(true) },
+        ]),
+      );
+      if (!ok) return;
+      await confirmSafetyNumber(userId, theirIdentity);
+      await load();
+    } catch (e) {
+      Alert.alert('Could not verify', e instanceof Error ? e.message : 'Please try again');
+    }
+  }
+
+  if (needsVerify) {
+    return (
+      <ScrollView style={s.screen} contentContainerStyle={{ padding: 24, gap: 14 }}>
+        <Text style={s.h1}>{name}</Text>
+        <Notice tone="warn">Before you see {name}'s items, compare safety numbers so you know nobody is impersonating them.</Notice>
+        <Button title={`Verify ${name}`} onPress={verify} />
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView style={s.screen} contentContainerStyle={{ padding: 24, gap: 14 }}>
