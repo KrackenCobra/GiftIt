@@ -226,10 +226,17 @@ export async function restoreWithRecoveryPhrase(phrase: string) {
   c.wipe(vaultKey);
 }
 
+/**
+ * Remove a lost or old phone, then replace the key of every circle you own so the
+ * phone can't read anything shared from now on.
+ */
 export async function revokeDevice(deviceId: string) {
+  const me = await loadDeviceIdentity();
+  if (me?.deviceId === deviceId) throw new Error('Use Sign out to remove this phone');
   const { error } = await supabase.rpc('revoke_device', { p_device_id: deviceId });
   if (error) throw error;
-  // Callers then rotate every circle they own (circles.removeMemberAndRotate with no member, see rotateCircle).
+  const { rotateAllMyCircles } = await import('./circles');
+  await rotateAllMyCircles();
 }
 
 export async function signOutAndWipe() {

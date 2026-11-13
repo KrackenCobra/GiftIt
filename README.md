@@ -73,6 +73,6 @@ PGURL=postgres://postgres@localhost:5432/postgres supabase/tests/run.sh   # 26 R
 - Supabase passkeys are **beta**. Re-check method names in `src/services/auth.ts` against the current docs before release.
 - The server knows the social graph (who is in whose circle) and *that* a wishlist item was claimed. It never learns what anything says.
 - Items are signed by their author's identity key, so nobody (a circle member, or the server) can forge or alter them. A compromised server could still delete items or serve an older signed version of one.
-- Revoking a device should be followed by rotating every circle you own; wire `revokeDevice` to `removeMemberAndRotate`-style rotation for each circle.
+- Revoking a phone replaces every circle key you own, so it can't read anything shared afterwards. It doesn't rotate your personal vault key or identity key (it already held them). If a phone is stolen while unlocked, restore from your recovery phrase on a new phone and re-share. Planned: vault-key rotation on revoke.
 - The suggestion proxy ships with a search-link adapter that works today. Add affiliate partner APIs once your accounts are approved, and keep the same output shape.
 - Before launch: external pen test against OWASP MASVS L2, privacy policy, App Store / Play data-safety forms, in-app data export and delete.

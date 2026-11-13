@@ -23,4 +23,4 @@ Security is the product: favorites are credential-grade data (security-question 
 - `src/crypto/` pure crypto + key storage · `src/services/` Supabase calls · `src/screens/` UI · `supabase/` schema, edge function, DB tests.
 
 ## Known gaps (see README "Known limits")
-Passkey API is Supabase beta; device revoke should trigger rotation of owned circles; server can still delete items or replay an older signed version.
+Passkey API is Supabase beta; device revoke rotates owned circles but not the vault/identity keys; server can still delete items or replay an older signed version.

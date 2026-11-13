@@ -170,6 +170,22 @@ export async function approveMember(circleId: string, memberId: string) {
  * key re-sealed to remaining members, old ciphertext and old sealed keys deleted.
  */
 export async function removeMemberAndRotate(circleId: string, memberId: string) {
+  return rotateCircle(circleId, memberId);
+}
+
+/** Rotate every circle I own, e.g. after revoking a lost phone. */
+export async function rotateAllMyCircles() {
+  const uid = await myId();
+  const { data, error } = await supabase.from('circles').select('id').eq('owner_id', uid);
+  if (error) throw error;
+  for (const c of data ?? []) await rotateCircle(c.id);
+}
+
+/**
+ * New circle key version: every item re-encrypted and re-signed, key re-sealed only to
+ * currently trusted devices (revoked ones are excluded), old sealed keys deleted.
+ */
+export async function rotateCircle(circleId: string, removeUserId?: string) {
   const c = crypto();
   const uid = await myId();
   const { data: circle, error } = await supabase.from('circles').select('key_version, name_ciphertext').eq('id', circleId).single();
@@ -179,8 +195,10 @@ export async function removeMemberAndRotate(circleId: string, memberId: string) 
   const oldKey = await getCircleKey(circleId, oldV);
   const newKey = c.newSymmetricKey();
 
-  const rm = await supabase.rpc('remove_member', { p_circle_id: circleId, p_user_id: memberId });
-  if (rm.error) throw rm.error;
+  if (removeUserId) {
+    const rm = await supabase.rpc('remove_member', { p_circle_id: circleId, p_user_id: removeUserId });
+    if (rm.error) throw rm.error;
+  }
 
   const { data: members } = await supabase.from('circle_members').select('user_id').eq('circle_id', circleId).not('accepted_at', 'is', null);
   await sealToUsers(circleId, newV, newKey, [uid, ...(members ?? []).map((m) => m.user_id as string)]);
