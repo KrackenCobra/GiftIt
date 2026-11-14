@@ -1,35 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { initCrypto } from './src/crypto';
 import { AppLock } from './src/lib/appLock';
+import { SessionContext } from './src/lib/session';
 import { colors } from './src/theme';
+import { APP_FONTS } from './src/theme/fontAssets';
+import { RootNavigator } from './src/RootNavigator';
 import { SignInScreen } from './src/screens/SignInScreen';
-import { FavoritesScreen } from './src/screens/FavoritesScreen';
-import { AddFavoriteScreen } from './src/screens/AddFavoriteScreen';
-import { WishlistScreen } from './src/screens/WishlistScreen';
-import { CirclesScreen } from './src/screens/CirclesScreen';
-import { FriendScreen } from './src/screens/FriendScreen';
-
-const Stack = createNativeStackNavigator();
-const Tabs = createBottomTabNavigator();
-
-function MainTabs() {
-  return (
-    <Tabs.Navigator screenOptions={{ headerShown: false, tabBarActiveTintColor: colors.accent }}>
-      <Tabs.Screen name="Favorites" component={FavoritesScreen} />
-      <Tabs.Screen name="Wishlist" component={WishlistScreen} />
-      <Tabs.Screen name="Circles" component={CirclesScreen} />
-    </Tabs.Navigator>
-  );
-}
 
 export default function App() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  // Fonts ship inside the app bundle; nothing is fetched at runtime.
+  const [fontsLoaded] = useFonts(APP_FONTS);
 
   useEffect(() => {
     // Crypto must be ready before the Supabase client (its session storage is encrypted).
@@ -46,28 +32,26 @@ export default function App() {
       .finally(() => setReady(true));
   }, []);
 
-  if (!ready) {
+  if (!ready || !fontsLoaded) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.bg }}>
-        <ActivityIndicator />
+        <ActivityIndicator color={colors.accent} />
       </View>
     );
   }
 
   return (
-    <AppLock>
-      <StatusBar style="dark" />
-      {signedIn ? (
-        <NavigationContainer>
-          <Stack.Navigator>
-            <Stack.Screen name="Main" component={MainTabs} options={{ headerShown: false }} />
-            <Stack.Screen name="AddFavorite" component={AddFavoriteScreen} options={{ title: 'New favorite', presentation: 'modal' }} />
-            <Stack.Screen name="Friend" component={FriendScreen} options={{ title: '' }} />
-          </Stack.Navigator>
-        </NavigationContainer>
-      ) : (
-        <SignInScreen onReady={() => setSignedIn(true)} />
-      )}
-    </AppLock>
+    <SafeAreaProvider>
+      <AppLock>
+        <StatusBar style="dark" />
+        {signedIn ? (
+          <SessionContext.Provider value={{ onSignedOut: () => setSignedIn(false) }}>
+            <RootNavigator />
+          </SessionContext.Provider>
+        ) : (
+          <SignInScreen onReady={() => setSignedIn(true)} />
+        )}
+      </AppLock>
+    </SafeAreaProvider>
   );
 }

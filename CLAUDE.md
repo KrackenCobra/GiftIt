@@ -17,10 +17,12 @@ Security is the product: favorites are credential-grade data (security-question 
 - `npm test` — crypto, tags, links (Jest, Node + libsodium-wrappers-sumo)
 - `npm run typecheck`
 - `PGURL=postgres://... supabase/tests/run.sh` — RLS tests on plain Postgres (uses `supabase/tests/supabase_shim.sql`)
+- `npm run preview` — real screens in a browser with sample data (web only; `metro.config.js` swaps `src/services/*` for `preview/services/*`). Design review only; `preview/check.ts` keeps the stand-ins' API identical to the real services.
 - App needs a dev build (`npx expo run:ios|android`); Expo Go won't work (native libsodium, passkeys).
 
 ## Layout
 - `src/crypto/` pure crypto + key storage · `src/services/` Supabase calls · `src/screens/` UI · `supabase/` schema, edge function, DB tests.
+- UI follows the "GiftIt — App Screens" design: tokens in `src/theme`, shared pieces in `src/components/ui.tsx`, icons in `src/components/Icon.tsx`, routes in `src/RootNavigator.tsx` (4 tabs; Friend profile lives in the Gifts tab).
 
 ## Known gaps (see README "Known limits")
 Passkey API is Supabase beta; device revoke rotates owned circles but not the vault/identity keys; server can still delete items or replay an older signed version.

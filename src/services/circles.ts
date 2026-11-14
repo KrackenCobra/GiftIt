@@ -166,6 +166,15 @@ export async function approveMember(circleId: string, memberId: string) {
 }
 
 /**
+ * Turn down a pending join request. Pending members were never sealed the circle key,
+ * so there is nothing to rotate; approved members go through removeMemberAndRotate.
+ */
+export async function declineRequest(circleId: string, memberId: string) {
+  const { error } = await supabase.rpc('remove_member', { p_circle_id: circleId, p_user_id: memberId });
+  if (error) throw error;
+}
+
+/**
  * Remove a member and rotate: new key version, every item in the circle re-encrypted,
  * key re-sealed to remaining members, old ciphertext and old sealed keys deleted.
  */

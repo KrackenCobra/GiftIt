@@ -87,6 +87,31 @@ select t_as(:B);
 select t_assert((select count(*) from items) = 0, 'removed member sees no items');
 select t_assert((select count(*) from item_claims) = 0, 'removed member''s claims are deleted');
 
+-- Gift plans (surprise mode): planner only, ever
+select t_as(:A);
+insert into gift_plans (id, planner_id, ciphertext) values ('50000000-0000-0000-0000-000000000001', :A, '{"v":1,"n":"n","c":"c"}');
+select t_assert((select count(*) from gift_plans) = 1, 'planner sees own plan');
+select t_expect_error($$insert into gift_plans (id, planner_id, ciphertext) values (gen_random_uuid(), 'bbbbbbbb-0000-0000-0000-000000000002', '{}')$$, 'cannot write a plan as someone else');
+select t_as(:B);
+select t_assert((select count(*) from gift_plans) = 0, 'others never see your plan');
+update gift_plans set ciphertext = '{"v":1,"n":"x","c":"x"}' where id = '50000000-0000-0000-0000-000000000001';
+delete from gift_plans where id = '50000000-0000-0000-0000-000000000001';
+select t_as(:A);
+select t_assert((select ciphertext->>'c' from gift_plans where id = '50000000-0000-0000-0000-000000000001') = 'c', 'others cannot change or delete your plan');
+select t_expect_error($$update gift_plans set planner_id = 'bbbbbbbb-0000-0000-0000-000000000002' where id = '50000000-0000-0000-0000-000000000001'$$, 'cannot hand a plan to someone else');
+
+-- Declining a pending join request removes it without granting anything
+select create_invite('c0000000-0000-0000-0000-000000000001', encode(extensions.digest('tok-C', 'sha256'), 'hex'));
+select t_as(:C);
+select redeem_invite('tok-C');
+select t_as(:A);
+select t_assert(exists (select 1 from circle_members where user_id = :C and accepted_at is null), 'C is pending');
+select remove_member('c0000000-0000-0000-0000-000000000001', :C);
+select t_assert(not exists (select 1 from circle_members where user_id = :C), 'declined request is gone');
+select t_as(:C);
+select t_assert((select count(*) from items) = 0, 'declined requester sees no items');
+select t_expect_error($$select redeem_invite('tok-C')$$, 'declined requester cannot reuse the invite');
+
 -- Expired invite
 reset role;
 insert into invites (circle_id, token_hash, expires_at) values ('c0000000-0000-0000-0000-000000000001', encode(extensions.digest('tok-old', 'sha256'), 'hex'), now() - interval '1 minute');
