@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
-import { Chip, s } from './ui';
+import { View } from 'react-native';
+import { RadioRow, SectionLabel } from './ui';
 import { listMyCircles, type CircleSummary } from '../services/circles';
 import type { Scope } from '../services/items';
+
+function peopleCount(c: CircleSummary) {
+  const n = c.members.filter((m) => !m.pending).length;
+  return `${n} ${n === 1 ? 'person' : 'people'}`;
+}
 
 /** Visibility picker. Defaults to "Only me". */
 export function ScopePicker({ value, onChange }: { value: Scope; onChange: (s: Scope) => void }) {
@@ -12,14 +17,15 @@ export function ScopePicker({ value, onChange }: { value: Scope; onChange: (s: S
   }, []);
   return (
     <View style={{ gap: 8 }}>
-      <Text style={s.label}>Who can see it</Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} accessibilityRole="radiogroup">
-        <Chip label="Only me" selected={value.type === 'private'} onPress={() => onChange({ type: 'private' })} />
+      <SectionLabel>Who can see it</SectionLabel>
+      <View style={{ gap: 8 }} accessibilityRole="radiogroup" accessibilityLabel="Visibility">
+        <RadioRow label="Only me" hint="Default" checked={value.type === 'private'} onPress={() => onChange({ type: 'private' })} />
         {circles.map((c) => (
-          <Chip
+          <RadioRow
             key={c.id}
-            label={`${c.name} (${c.members.filter((m) => !m.pending).length})`}
-            selected={value.type === 'circle' && value.circleId === c.id}
+            label={c.name}
+            hint={peopleCount(c)}
+            checked={value.type === 'circle' && value.circleId === c.id}
             onPress={() => onChange({ type: 'circle', circleId: c.id })}
           />
         ))}

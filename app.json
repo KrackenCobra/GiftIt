@@ -10,7 +10,9 @@
     "ios": {
       "bundleIdentifier": "com.example.giftit",
       "supportsTablet": false,
-      "associatedDomains": ["webcredentials:giftit.example.com"],
+      "associatedDomains": [
+        "webcredentials:giftit.example.com"
+      ],
       "infoPlist": {
         "NSFaceIDUsageDescription": "GiftIt uses Face ID to unlock your encrypted favorites."
       }
@@ -26,7 +28,13 @@
     },
     "plugins": [
       "expo-secure-store",
-      ["expo-local-authentication", { "faceIDPermission": "GiftIt uses Face ID to unlock your encrypted favorites." }]
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "GiftIt uses Face ID to unlock your encrypted favorites."
+        }
+      ],
+      "expo-font"
     ],
     "extra": {
       "passkeyRpId": "giftit.example.com"

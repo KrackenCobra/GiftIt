@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, View } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Button, Chip, Field, Notice, s } from '../components/ui';
+import { Button, Chip, Field, Notice, Screen, SectionLabel, T } from '../components/ui';
 import { ScopePicker } from '../components/ScopePicker';
-import { CATEGORIES, saveFavorite, type Category, type Scope } from '../services/items';
+import { colors } from '../theme';
+import { saveFavorite, type Category, type Scope } from '../services/items';
 
-const PICKABLE = CATEGORIES.filter((c) => c !== 'wishlist');
+/** Order matches the design; Scent and Books & films also feed gift matching. */
+const CATS: { id: Category; label: string }[] = [
+  { id: 'color', label: 'Color' },
+  { id: 'flower', label: 'Flower' },
+  { id: 'food', label: 'Food' },
+  { id: 'size', label: 'Size' },
+  { id: 'brand', label: 'Brand' },
+  { id: 'hobby', label: 'Hobby' },
+  { id: 'scent', label: 'Scent' },
+  { id: 'genre', label: 'Books & films' },
+  { id: 'custom', label: 'Custom' },
+];
 
 export function AddFavoriteScreen() {
   const nav = useNavigation();
@@ -28,20 +40,33 @@ export function AddFavoriteScreen() {
   }
 
   return (
-    <ScrollView style={s.screen} contentContainerStyle={{ padding: 24, gap: 18 }} keyboardShouldPersistTaps="handled">
-      <View style={{ gap: 8 }}>
-        <Text style={s.label}>Category</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          {PICKABLE.map((c) => (
-            <Chip key={c} label={c[0]!.toUpperCase() + c.slice(1)} selected={c === category} onPress={() => setCategory(c)} />
-          ))}
-        </View>
+    <Screen contentStyle={{ gap: 0 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Pressable accessibilityRole="button" onPress={() => nav.goBack()} hitSlop={8} style={{ paddingVertical: 10, width: 64 }}>
+          <T style={{ fontSize: 16, color: colors.ink2 }}>Cancel</T>
+        </Pressable>
+        <T weight="semibold" accessibilityRole="header" style={{ fontSize: 17 }}>New favorite</T>
+        <View style={{ width: 64 }} />
       </View>
-      <Field label="Your favorite" value={value} onChangeText={setValue} maxLength={120} />
-      <Field label="Note for gift-givers (optional)" value={note} onChangeText={setNote} maxLength={280} />
-      <Notice tone="warn">Don't use anything you share here as a security-question answer for your bank or email.</Notice>
-      <ScopePicker value={scope} onChange={setScope} />
-      <Button title="Encrypt and save" busy={busy} disabled={!value.trim()} onPress={save} />
-    </ScrollView>
+
+      <SectionLabel style={{ marginTop: 20 }}>Category</SectionLabel>
+      <View style={{ marginTop: 8, flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {CATS.map((c) => (
+          <Chip key={c.id} label={c.label} selected={c.id === category} onPress={() => setCategory(c.id)} />
+        ))}
+      </View>
+
+      <View style={{ marginTop: 22, gap: 16 }}>
+        <Field label="Your favorite" value={value} onChangeText={setValue} maxLength={120} placeholder="Peonies, pale pink" />
+        <Field label="Note for gift-givers (optional)" value={note} onChangeText={setNote} maxLength={280} placeholder="Not roses, please" />
+        <Notice tone="warn">Don't use anything you share here as a security-question answer for your bank or email.</Notice>
+      </View>
+
+      <View style={{ marginTop: 20 }}>
+        <ScopePicker value={scope} onChange={setScope} />
+      </View>
+
+      <Button title="Encrypt and save" icon="lock" busy={busy} disabled={!value.trim()} onPress={save} style={{ marginTop: 28 }} />
+    </Screen>
   );
 }
