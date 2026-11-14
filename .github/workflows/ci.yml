@@ -20,8 +20,11 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
       - run: npm test
+      # 2026-11-14: high+ advisories fail the build except the image-size
+      # entries allow-listed (with reasons) in scripts/audit.mjs. image-size
+      # is Metro build-time tooling stuck on 1.x until Expo/Metro update.
       - name: Dependency audit (production deps, high+)
-        run: npm audit --omit=dev --audit-level=high
+        run: node scripts/audit.mjs
 
   database:
     runs-on: ubuntu-latest
