@@ -27,12 +27,12 @@
     "expo-status-bar": "~3.0.0",
     "expo-web-browser": "~15.0.0",
     "react": "19.1.0",
-    "react-native": "0.81.0",
+    "react-native": "0.81.5",
     "react-native-get-random-values": "^1.11.0",
     "react-native-libsodium": "^1.4.0",
     "react-native-passkey": "^3.1.0",
-    "react-native-safe-area-context": "^5.4.0",
-    "react-native-screens": "^4.11.0"
+    "react-native-safe-area-context": "~5.6.0",
+    "react-native-screens": "~4.16.0"
   },
   "devDependencies": {
     "@types/jest": "^29.5.12",
