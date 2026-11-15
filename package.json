@@ -47,5 +47,8 @@
     "preset": "ts-jest",
     "testEnvironment": "node",
     "testMatch": ["<rootDir>/tests/**/*.test.ts"]
+  },
+  "overrides": {
+    "postcss": "^8.5.33"
   }
 }
